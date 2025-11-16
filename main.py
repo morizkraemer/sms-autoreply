@@ -1,10 +1,17 @@
-from modem import Modem
-from message_queue import Message_Queue
+import threading
 import time
+import uvicorn
+import logging
 
-REPLY_MESSAGE = "Hey there, got your message :)"
+from db.connection import Database
+from helpers.message_queue import Message_Queue
+from modem.modem import Modem
+from db.connection import Database
+from db.connection import conn_string
+from helpers.shared_data import shared_data
 
-def loop(mqueue, modem):
+def loop(mqueue: Message_Queue, modem: Modem):
+
     while True:
         if mqueue.delete_empty():
             mqueue.append_delete(modem.get_all_sms())
@@ -12,7 +19,7 @@ def loop(mqueue, modem):
         if not mqueue.send_empty():
             while not mqueue.send_empty():
                 message = mqueue.get_first_send()
-                if (modem.send_sms(message["number"], REPLY_MESSAGE)):
+                if (modem.send_sms(message["number"], shared_data.get_reply_message())):
                     mqueue.remove_first_send()
                 else:
                     break
@@ -26,17 +33,21 @@ def loop(mqueue, modem):
                     break
         time.sleep(1)
 
+def run_web_server():
+    uvicorn.run("webserver.server:app", host="0.0.0.0", port = 6969)
+
 def main():
-    modem = Modem()
-    mqueue = Message_Queue()
+    # modem = Modem()
+    # mqueue = Message_Queue()
 
-    # mqueue.append_delete(modem.get_all_sms())
-    # print(mqueue.get_all_delete())
-    # print(mqueue.get_first_delete())
+    db = Database(conn_string)
 
-    # print(modem.get_all_sms())
-
-    loop(mqueue, modem)
+    # web_thread = threading.Thread(target=run_web_server, daemon=True)
+    # web_thread.start()
+    #
+    while True:
+        time.sleep(10)
+    # loop(mqueue, modem)
 
 
 

@@ -1,15 +1,3 @@
-def blocking(func):
-    def wrapper(self, *args, **kwargs):
-        if getattr(self, '_blocked', False):
-            print(f"Command already in process, skipping {func.__name__}")
-            return
-        setattr(self, '_blocked', True)
-        try: 
-            return func(self, *args, **kwargs)
-        finally:
-            setattr(self, '_blocked', False)
-    return wrapper
-
 class ConnectionError(Exception):
     pass
 

@@ -1,0 +1,15 @@
+services:
+  web:
+    build: .
+    ports:
+      - "6969:6969"
+
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: passwd
+      POSTGRES_DB: gsm

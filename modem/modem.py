@@ -1,5 +1,6 @@
 import serial
-from modem_helpers import blocking, readlines_helper, ConnectionError, parse_all_sms
+from modem.modem_helpers import readlines_helper, ConnectionError, parse_all_sms
+import logging
 
 class Modem:
     def __init__(self):
@@ -12,7 +13,6 @@ class Modem:
         else:
             return readlines_helper(self.m)
 
-    @blocking
     def write_at(self, command):
         if (not self.m):
             return
@@ -26,9 +26,8 @@ class Modem:
 
         return self.readlines()
 
-    @blocking
     def create_connection(self):
-        print("Connecting to modem")
+        logging.info("Connecting to modem")
         try:
             ser = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, timeout=2)
 
@@ -37,21 +36,21 @@ class Modem:
             if (b'ERROR' in response):
                 ser.close()
                 raise ConnectionError("Connection failed")
-            print("Set no command echoing")
+            logging.info("Set no command echoing")
 
             ser.write(b'AT+CMEE=?\r\n')
             response = readlines_helper(ser)
             if (b'ERROR' in response):
                 ser.close()
                 raise ConnectionError("Connection failed")
-            print("Set verbose errors")
+            logging.info("Set verbose errors")
 
             ser.write(b'AT+CMGF=1')
             response = readlines_helper(ser)
             if (b'ERROR' in response):
                 ser.close()
                 raise ConnectionError("Connection failed")
-            print('Set sms mode')
+            logging.info('Set sms mode')
 
             ser.write(b'AT\r\n')
             response = readlines_helper(ser)
@@ -59,11 +58,11 @@ class Modem:
                 ser.close()
                 raise ConnectionError("Connection failed")
 
-            print("Connected")
+            logging.info("Connected")
             return ser
 
         except Exception as e:
-            print(e)
+            logging.info(e)
 
     def test_connection(self):
         if (not self.m):
@@ -75,14 +74,14 @@ class Modem:
             return
         response = self.write_at(f'AT+CMGS="{number}"')
         if not response or b'> ' not in response:
-            print("Message prompt failed", response)
+            logging.info("Message prompt failed", response)
             return
         response = self.write_at(f'{message} \x1a')
         if not response or any(b'ERROR' in item for item in response) or not b'OK\r\n' in response:
-            print("Message not sent, error")
+            logging.info("Message not sent, error")
             return False
         else:
-            print(f'Message sent to {number}!')
+            logging.info(f'Message sent to {number}!')
             return True
 
     def get_unread_sms(self):
@@ -102,7 +101,7 @@ class Modem:
             return
         response = self.write_at(f'AT+CMGD={index}')
         if not response or not b'OK\r\n' in response:
-            print("Delete message failed")
+            logging.info("Delete message failed")
             return False
         return True
 
